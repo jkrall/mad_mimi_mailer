@@ -45,6 +45,7 @@ class MadMimiMailer < ActionMailer::Base
     end
 
     def mimi_method_name(method_symbol)
+      @@_mad_mimi_mailer_method_symbols ||= []
       stripped_name = method_symbol.id2name.sub(/^(deliver|create)_/,'')
       return stripped_name if @@_mad_mimi_mailer_method_symbols.include?(stripped_name)
       if method_symbol.id2name.match(/^deliver_(mimi_[_a-z]\w*)/)
