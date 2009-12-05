@@ -13,6 +13,19 @@ deliver_mimi_foo and it will send your Mad Mimi promotion named "foo".
 Oh, and it will also automatically import the recipient into your
 Mad Mimi account.
 
+Optionally, you can keep your existing mailer method names, and use the
+send_with_mad_mimi class method to direct the MadMimiMailer to send
+specific emails with Mad Mimi:
+
+  class UserNotifier < MadMimiMailer
+    send_with_mad_mimi :custom_mimi_email
+    def custom_mimi_email(user)
+      subject "This will send with Mad Mimi!"
+      recipients user.email
+    end
+  end
+
+
 == TODO:
 
 * If something goes wrong with the call to Mad Mimi, fallback and use plain old local Rails templates.
