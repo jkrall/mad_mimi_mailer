@@ -3,7 +3,7 @@ require "net/http"
 require "net/https"
 
 class MadMimiMailer < ActionMailer::Base
-  VERSION = '0.0.5'
+  VERSION = '0.0.8'
   SINGLE_SEND_URL = 'https://madmimi.com/mailer'
 
   @@api_settings = {}
@@ -75,7 +75,14 @@ class MadMimiMailer < ActionMailer::Base
       if delivery_method == :test
         deliveries << (mail.mail ? mail.mail : mail)
       else
-        call_api!(mail, method)
+        if (all_recipients = mail.recipients).is_a? Array
+          all_recipients.each do |recipient|
+            mail.recipients = recipient
+            call_api!(mail, method)
+          end
+        else
+          call_api!(mail, method)
+        end
       end
     end
 
@@ -93,14 +100,12 @@ class MadMimiMailer < ActionMailer::Base
 
       if mail.use_erb
         if mail.parts.any?
-          mail = mail.parts.detect {|p| p.content_type == 'text/html' }
+          params['raw_plain_text'] = content_for(mail, "text/plain")
+          params['raw_html'] = content_for(mail, "text/html") { |html| validate(html.body) }
+        else
+          validate(mail.body)
+          params['raw_html'] = mail.body
         end
-
-        unless mail.body.include?("[[peek_image]]")
-          raise ValidationError, "You must include a web beacon in your Mimi email: [[peek_image]]"
-        end
-
-        params['raw_html'] = mail.body
       else
         params['body'] = mail.body.to_yaml
       end
@@ -114,6 +119,20 @@ class MadMimiMailer < ActionMailer::Base
         response.body
       else
         response.error!
+      end
+    end
+
+    def content_for(mail, content_type)
+      part = mail.parts.detect {|p| p.content_type == content_type }
+      if part
+        yield(part) if block_given?
+        part.body
+      end
+    end
+    
+    def validate(content)
+      unless content.include?("[[peek_image]]") || content.include?("[[tracking_beacon]]")
+        raise ValidationError, "You must include a web beacon in your Mimi email: [[peek_image]]"
       end
     end
 
