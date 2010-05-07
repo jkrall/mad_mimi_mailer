@@ -47,7 +47,7 @@ class TestMadMimiMailerWithCustomNames < Test::Unit::TestCase
       'subject' =>        "welcome to mad mimi",
       'bcc' =>            "Gregg Pollack <gregg@example.com>, David Clymer <david@example>",
       'from' =>           "dave@obtiva.com",
-      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'body' =>           "--- \nmessage: welcome to mad mimi\n",
       'hidden' =>         nil
     )
     response = Net::HTTPSuccess.new("1.2", '200', 'OK')

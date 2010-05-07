@@ -129,7 +129,7 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'subject' =>        "welcome to mad mimi",
       'bcc' =>            "Gregg Pollack <gregg@example.com>, David Clymer <david@example>",
       'from' =>           "dave@obtiva.com",
-      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'body' =>           "--- \nmessage: welcome to mad mimi\n",
       'hidden' =>         nil,
       'check_suppressed' => "1"
     )
