@@ -62,6 +62,16 @@ class MadMimiMailer
     from "dave@obtiva.com"
     body :message => greeting
   end
+
+  def mimi_with_check_suppressed(greeting)
+    subject greeting
+    recipients "tyler@obtiva.com"
+    from "dave@obtiva.com"
+    bcc ["Gregg Pollack <gregg@example.com>", "David Clymer <david@example>"]
+    promotion "hello"
+    body :message => greeting
+    check_suppressed true
+  end
 end
 
 class TestMadMimiMailer < Test::Unit::TestCase
@@ -170,6 +180,27 @@ class TestMadMimiMailer < Test::Unit::TestCase
     MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
 
     MadMimiMailer.deliver_mimi_multipart_hello_erb("welcome to mad mimi")
+  end
+
+  def test_with_check_suppressed
+    mock_request = mock("request")
+    mock_request.expects(:set_form_data).with(
+      'username' => "testy@mctestin.com",
+      'api_key' =>  "w00tb4r",
+      'promotion_name' => "hello",
+      'recipients' =>     "tyler@obtiva.com",
+      'subject' =>        "welcome to mad mimi",
+      'bcc' =>            "Gregg Pollack <gregg@example.com>, David Clymer <david@example>",
+      'from' =>           "dave@obtiva.com",
+      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'hidden' =>         nil,
+      'check_suppressed' => "1"
+    )
+    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
+    response.stubs(:body).returns("123435")
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+
+    MadMimiMailer.deliver_mimi_with_check_suppressed("welcome to mad mimi")
   end
 
   def test_deliveries_contain_tmail_objects_when_use_erb_in_test_mode

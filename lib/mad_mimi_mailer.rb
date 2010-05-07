@@ -35,6 +35,14 @@ class MadMimiMailer < ActionMailer::Base
     end
   end
 
+  def check_suppressed(check_suppressed = nil)
+    if check_suppressed.nil?
+      @check_suppressed
+    else
+      @check_suppressed = check_suppressed
+    end
+  end
+
   # Class methods
 
   class << self
@@ -98,6 +106,8 @@ class MadMimiMailer < ActionMailer::Base
         'hidden' =>         serialize(mail.hidden)
       }
 
+      params['check_suppressed'] = '1' if mail.check_suppressed
+
       if mail.use_erb
         if mail.parts.any?
           params['raw_plain_text'] = content_for(mail, "text/plain")
@@ -129,7 +139,7 @@ class MadMimiMailer < ActionMailer::Base
         part.body
       end
     end
-    
+
     def validate(content)
       unless content.include?("[[peek_image]]") || content.include?("[[tracking_beacon]]")
         raise ValidationError, "You must include a web beacon in your Mimi email: [[peek_image]]"
