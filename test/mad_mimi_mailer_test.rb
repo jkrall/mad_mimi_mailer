@@ -1,83 +1,11 @@
-require "rubygems"
-require "test/unit"
-require "mocha"
-
-require "mad_mimi_mailer"
-
-MadMimiMailer.api_settings = {
-  :username => "testy@mctestin.com",
-  :api_key => "w00tb4r"
-}
-
-class MadMimiMailer
-  self.template_root = File.dirname(__FILE__) + '/templates/'
-
-  def mimi_hola(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    bcc ["Gregg Pollack <gregg@example.com>", "David Clymer <david@example>"]
-    promotion "hello"
-    body :message => greeting
-  end
-
-  def mimi_hello(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    bcc ["Gregg Pollack <gregg@example.com>", "David Clymer <david@example>"]
-    body :message => greeting
-  end
-
-  def mimi_hello_erb(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    promotion "w00t"
-    use_erb true
-    body :message => greeting
-  end
-
-  def mimi_multipart_hello_erb(greeting)
-    subject greeting
-    recipients "sandro@hashrocket.com"
-    from "stephen@hashrocket.com"
-    promotion "w00t"
-    use_erb true
-    body :message => greeting
-  end
-
-  def mimi_bye_erb(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    promotion "w00t"
-    use_erb true
-    body :message => greeting
-  end
-
-  def mimi_hello_sans_bcc(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    body :message => greeting
-  end
-
-  def mimi_with_check_suppressed(greeting)
-    subject greeting
-    recipients "tyler@obtiva.com"
-    from "dave@obtiva.com"
-    bcc ["Gregg Pollack <gregg@example.com>", "David Clymer <david@example>"]
-    promotion "hello"
-    body :message => greeting
-    check_suppressed true
-  end
-end
+require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 
 class TestMadMimiMailer < Test::Unit::TestCase
 
   def setup
     ActionMailer::Base.deliveries.clear
+    @ok_reponse = Net::HTTPSuccess.new("1.2", '200', 'OK')
+    @ok_reponse.stubs(:body).returns('123435')
   end
 
   def test_custom_promotion
@@ -90,12 +18,10 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'subject' =>        "welcome to mad mimi",
       'bcc' =>            "Gregg Pollack <gregg@example.com>, David Clymer <david@example>",
       'from' =>           "dave@obtiva.com",
-      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'body' =>           "--- \nmessage: welcome to mad mimi\n",
       'hidden' =>         nil
     )
-    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
-    response.stubs(:body).returns("123435")
-    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
 
     MadMimiMailer.deliver_mimi_hola("welcome to mad mimi")
   end
@@ -110,12 +36,10 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'subject' =>        "welcome to mad mimi",
       'bcc' =>            "Gregg Pollack <gregg@example.com>, David Clymer <david@example>",
       'from' =>           "dave@obtiva.com",
-      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'body' =>           "--- \nmessage: welcome to mad mimi\n",
       'hidden' =>         nil
     )
-    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
-    response.stubs(:body).returns("123435")
-    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
 
     promotion_attempt_id = MadMimiMailer.deliver_mimi_hello("welcome to mad mimi")
     assert_equal "123435", promotion_attempt_id
@@ -131,12 +55,10 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'bcc' =>            nil,
       'subject' =>        "welcome to mad mimi",
       'from' =>           "dave@obtiva.com",
-      'body' =>           "--- \n:message: welcome to mad mimi\n",
+      'body' =>           "--- \nmessage: welcome to mad mimi\n",
       'hidden' =>         nil
     )
-    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
-    response.stubs(:body).returns("123435")
-    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
 
     MadMimiMailer.deliver_mimi_hello_sans_bcc("welcome to mad mimi")
   end
@@ -154,9 +76,7 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'raw_html' =>       "hi there, welcome to mad mimi [[peek_image]]",
       'hidden' =>         nil
     )
-    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
-    response.stubs(:body).returns("123435")
-    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
 
     MadMimiMailer.deliver_mimi_hello_erb("welcome to mad mimi")
   end
@@ -175,11 +95,28 @@ class TestMadMimiMailer < Test::Unit::TestCase
       'raw_plain_text' => "hi there, welcome to mad mimi!",
       'hidden' =>         nil
     )
-    response = Net::HTTPSuccess.new("1.2", '200', 'OK')
-    response.stubs(:body).returns("123435")
-    MadMimiMailer.expects(:post_request).yields(mock_request).returns(response)
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
 
     MadMimiMailer.deliver_mimi_multipart_hello_erb("welcome to mad mimi")
+  end
+
+  def test_delivers_contain_unconfirmed_param_if_unconfirmed_is_set
+    mock_request = mock("request")
+    mock_request.expects(:set_form_data).with(
+      'username' => "testy@mctestin.com",
+      'api_key' =>  "w00tb4r",
+      'body' => "--- \nmessage: welcome unconfirmed user\n",
+      'promotion_name' => "woot",
+      'recipients' =>     'egunderson@obtiva.com',
+      'bcc' =>            nil,
+      'subject' =>        "welcome unconfirmed user",
+      'from' =>           "mimi@obtiva.com",
+      'hidden' =>         nil,
+      'unconfirmed' =>    '1'
+    )
+    MadMimiMailer.expects(:post_request).yields(mock_request).returns(@ok_reponse)
+
+    MadMimiMailer.deliver_mimi_unconfirmed("welcome unconfirmed user")
   end
 
   def test_with_check_suppressed
