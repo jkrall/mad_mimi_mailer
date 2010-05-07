@@ -1,4 +1,5 @@
 module MadMimiMailable
+  SINGLE_SEND_URL = 'https://madmimi.com/mailer'
 
   def self.included(base)
     base.extend(ClassMethods)
@@ -47,9 +48,24 @@ module MadMimiMailable
   end
 
   module ClassMethods
+    def send_with_mad_mimi(*email_methods)
+      @@_mad_mimi_mailer_method_symbols ||= []
+      @@_mad_mimi_mailer_method_symbols += email_methods.collect { |m| m.to_s }
+    end
+
+    def mimi_method_name(method_symbol)
+      @@_mad_mimi_mailer_method_symbols ||= []
+      stripped_name = method_symbol.id2name.sub(/^(deliver|create)_/,'')
+      return stripped_name if @@_mad_mimi_mailer_method_symbols.include?(stripped_name)
+      if method_symbol.id2name.match(/^deliver_(mimi_[_a-z]\w*)/)
+        return $1
+      end
+      nil
+    end
+
     def method_missing(method_symbol, *parameters)
-      if method_symbol.id2name.match(/^deliver_([_a-z]\w*)/)
-        deliver_mimi_mail($1, *parameters)
+      if mimi_method = mimi_method_name(method_symbol)
+        deliver_mimi_mail(mimi_method, *parameters)
       else
         super
       end
